@@ -6,6 +6,7 @@ import java.util.Date
 
 import com.alibaba.fastjson.JSON
 import com.atguigu.gmall0901.dw.common.constant.GmallConstant
+import com.atguigu.gmall0901.dw.common.util.MyEsUtil
 import com.atguigu.gmall0901.dw.realtime.bean.StartupLog
 import com.atguigu.gmall0901.dw.realtime.util.{MyKafkaUtil, RedisUtil}
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -15,6 +16,8 @@ import org.apache.spark.streaming.dstream.{DStream, InputDStream}
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
 import redis.clients.jedis.Jedis
+
+import scala.collection.mutable.ListBuffer
 
 object StartupApp {
   def main(args: Array[String]): Unit = {
@@ -85,11 +88,16 @@ object StartupApp {
         rdd.foreachPartition{startupItr=>
             //executor
           val jedis:Jedis = RedisUtil.getJedisClient
+          val list = new ListBuffer[Any]()
           for (startupLog <- startupItr ) {
             val daukey: String = "dau:" + startupLog.logDate
+
             jedis.sadd(daukey,startupLog.mid)
+            list+=startupLog
           }
           jedis.close()
+          MyEsUtil.insertBulk(GmallConstant.ES_INDEX_DAU,list.toList)
+
         }
 
     }
