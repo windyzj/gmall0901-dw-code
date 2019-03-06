@@ -9,7 +9,7 @@ import io.searchbox.core.{Bulk, BulkResult, Index}
 
 
 object MyEsUtil {
-  private val ES_HOST = "http://hadoop1"
+  private val ES_HOST = "http://192.168.11.131"
   private val ES_HTTP_PORT = 9200
   private var factory: JestClientFactory = null
 
@@ -40,9 +40,7 @@ object MyEsUtil {
     */
   private def build(): Unit = {
     factory = new JestClientFactory
-    factory.setHttpClientConfig(new HttpClientConfig.Builder(ES_HOST + ":" + ES_HTTP_PORT).multiThreaded(true)
-      .maxTotalConnection(20) //连接总数
-      .connTimeout(10000).readTimeout(10000).build)
+    factory.setHttpClientConfig(new HttpClientConfig.Builder(ES_HOST + ":" + ES_HTTP_PORT).multiThreaded(true).maxTotalConnection(20) .connTimeout(10000).readTimeout(10000).build)
 
   }
 
@@ -57,7 +55,8 @@ object MyEsUtil {
       val index: Index = new Index.Builder(doc) .build()
       bulkBuilder.addAction(index)
     }
-    jest.execute(bulkBuilder.build())
+    val result: BulkResult = jest.execute(bulkBuilder.build())
+    println(s"保存es  = ${result.getItems.size()} 条")
     close(jest)
   }
 
